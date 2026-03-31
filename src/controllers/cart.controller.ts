@@ -1,14 +1,24 @@
 import { prisma } from "@/lib/prisma";
 
-export async function upsertProduct(
-  userId: string,
-  productId: string,
-  qty: number,
-) {
+type ProductInput = {
+  userId: string;
+  productId: string;
+  qty: number;
+};
+
+export async function upsertProduct(input: ProductInput) {
+  const { userId, productId, qty } = input;
+
+  if (!userId?.trim() || !productId?.trim()) {
+    return { success: false, message: "User ID and Product ID are required." };
+  }
+
+  if (!Number.isInteger(qty) || qty < 1) {
+    return { success: false, message: "Quantity must be a positive integer." };
+  }
+
   try {
-
     const result = await prisma.$transaction(async (tx) => {
-
       const product = await tx.product.findUnique({
         where: { id: productId },
       });
@@ -30,7 +40,7 @@ export async function upsertProduct(
         },
       });
 
-      console.log(" existing cart item", existing);
+      // console.log(" existing cart item", existing);
 
       let cartItem;
 
@@ -72,23 +82,20 @@ export async function upsertProduct(
 }
 
 export async function decreaseQty(userId: string, cartItemId: string) {
+  if (!userId?.trim() || !cartItemId?.trim()) {
+    return {
+      success: false,
+      message: "User ID and Cart Item ID are required.",
+    };
+  }
+
   try {
-    return await prisma.$transaction(async (tx) => {
-      const item = await tx.cartItem.findFirst({
+    const decreaseData = await prisma.$transaction(async (tx) => {
+      let item = await tx.cartItem.findFirst({
         where: { id: cartItemId, userId },
       });
 
-      if (!item) throw new Error("Item not found");
-
-      // 🔥 Restore stock
-      await tx.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            increment: 1,
-          },
-        },
-      });
+      if (!item) throw new Error("Cart Item not found");
 
       if (item.qty === 1) {
         await tx.cartItem.delete({
@@ -105,11 +112,21 @@ export async function decreaseQty(userId: string, cartItemId: string) {
         });
       }
 
-      return {
-        success: true,
-        message: "Quantity updated",
-      };
+      return item;
     });
+
+    if (!decreaseData) {
+      return {
+        success: false,
+        message: "Data Decrease Error",
+      };
+    }
+
+    return {
+      success: true,
+      data: decreaseData,
+      message: "Quantity updated",
+    };
   } catch (error: any) {
     return {
       success: false,
@@ -119,57 +136,55 @@ export async function decreaseQty(userId: string, cartItemId: string) {
 }
 
 export async function getCartItems(userId: string) {
-  if (!userId) {
-    return {
-      success: false,
-      message: "Unauthorized",
-    };
+  if (!userId?.trim()) {
+    return { success: false, message: "Unauthorized." };
   }
 
-  const cart = await prisma.cartItem.findMany({
-    where: { userId },
-    include: {
-      product: true,
-    },
-  });
+  try {
+    const cart = await prisma.cartItem.findMany({
+      where: { userId },
+      include: { product: true },
+    });
 
-  // console.log("cart", cart);
-
-  return {
-    success: true,
-    cart,
-    message: "Cart Data Fetched Successfully !!",
-  };
+    return {
+      success: true,
+      data: cart,
+      message: cart.length ? "Cart fetched successfully." : "Cart is empty.",
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
 }
 
 export async function removeCartItems(cartItemId: string, userId: string) {
+  if (!cartItemId?.trim() || !userId?.trim()) {
+    return {
+      success: false,
+      message: "Cart Item ID and User ID are required.",
+    };
+  }
+
   try {
-    return await prisma.$transaction(async (tx) => {
-      const item = await tx.cartItem.findFirst({
+    const removeData = await prisma.$transaction(async (tx) => {
+      let item = await tx.cartItem.findFirst({
         where: { id: cartItemId, userId },
       });
 
       if (!item) throw new Error("Item not found");
 
-      // 🔥 Restore stock
-      await tx.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            increment: item.qty,
-          },
-        },
-      });
-
       await tx.cartItem.delete({
         where: { id: cartItemId },
       });
-
-      return {
-        success: true,
-        message: "Item removed from cart",
-      };
+      return item;
     });
+    return {
+      success: true,
+      data: removeData,
+      message: "Item removed from cart",
+    };
   } catch (error: any) {
     return {
       success: false,

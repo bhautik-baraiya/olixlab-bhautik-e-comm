@@ -9,9 +9,18 @@ export async function GET(req: NextRequest) {
 
     const res = await getCartItems(userId);
 
-    console.log("cart ---------",res)
+    if (!res || !res.success) {
+      return NextResponse.json({
+        success: false,
+        message: res?.message,
+      });
+    }
 
-    return NextResponse.json(res);
+    return NextResponse.json({
+      success: true,
+      message: res.message,
+      data: res.data,
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({

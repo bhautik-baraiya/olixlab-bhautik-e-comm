@@ -7,7 +7,21 @@ export async function DELETE(req: NextRequest) {
 
     const res = await deleteProduct(productId);
 
-    return NextResponse.json(res);
+    if (!res || !res.success) {
+      return NextResponse.json({
+        success: false,
+        message: res?.message,
+      });
+    }
+
+  return NextResponse.json(
+      {
+        success: true,
+        message: res.message,
+        data: res.data,
+      },
+      { status: 201 },
+    );
   } catch (error) {
     console.log(error);
   }

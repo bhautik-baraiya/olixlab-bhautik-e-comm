@@ -12,37 +12,55 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { POST } from "@/app/api/auth/login/route";
+
+import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+type FormData = {
+  email: string;
+  password: string;
+};
 
+export default function Login() {
   const router = useRouter();
 
-  const handleLogin = async () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>();
+
+  const onSubmit = async (formData: FormData) => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
       console.log(data);
 
-      if(data.success){
-        toast.success("Login successfully! Redirecting...");
-        router.push("/")
+      if (!data || !data.success) {
+        toast.error(data?.message || "Login failed");
+        return;
+      }
+
+      if (data.data.email == "admin@gmail.com" && data.success === true) {
+        console.log("admin login");
+        toast.success(data.message);
+        router.push("/admin/dashboard");
+      } else {
+        toast.success(data.message);
+        router.push("/");
       }
     } catch (error) {
       console.log(error);
+      toast.error("Something went wrong");
     }
   };
 
@@ -57,34 +75,44 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label>Email</Label>
               <Input
                 type="email"
-                value={email}
                 placeholder="you@example.com"
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email", {
+                  required: "Email is required",
+                })}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Password</Label>
               <Input
                 type="password"
-                value={password}
                 placeholder="••••••••"
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("password", {
+                  required: "Password is required",
+                })}
               />
+              {errors.password && (
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
+
+            <Button className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Login in..." : "Login"}
+            </Button>
           </form>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3">
-          <Button className="w-full" onClick={handleLogin}>
-            Sign In
-          </Button>
-
           <p className="text-sm text-center text-gray-500">
             Don’t have an account?{" "}
             <Link href="/register" className="text-blue-600 hover:underline">

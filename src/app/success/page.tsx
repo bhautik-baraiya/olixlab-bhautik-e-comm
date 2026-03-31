@@ -1,6 +1,7 @@
 "use client";
 
 import Loader from "@/components/ui/loader";
+import { RootState } from "@/store/store";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,13 +18,16 @@ export default function PaymentSuccess() {
     setOrderRef(`ORD-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
   }, []);
 
-  const {items} = useSelector((state)=>state.ite)
-
+  const { items } = useSelector((state: RootState) => state.cart);
+  
   useEffect(() => {
-    if (!sessionId) {
-      setLoading(false);
-      return;
-    }
+
+    console.log("items -------------",items)
+
+  if (!sessionId) {
+    setLoading(false);
+    return;
+  }
 
     const verifyPayment = async () => {
       try {
@@ -32,12 +36,11 @@ export default function PaymentSuccess() {
         if (data.success) {
           setPaymentData(data);
 
+          // remove stock
 
-          // remove stock 
-
-
-
-
+          await Promise.all(
+            ite
+          )
 
         } else {
           console.error("Payment not completed:", data.status);
@@ -59,10 +62,8 @@ export default function PaymentSuccess() {
   return (
     <main className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
-
         {/* Card */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-
           {/* Top accent bar */}
           <div className="h-1 w-full bg-gradient-to-r from-violet-600 to-pink-600" />
 
@@ -71,7 +72,13 @@ export default function PaymentSuccess() {
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-4">
                 <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="14" stroke="#22c55e" strokeWidth="2" />
+                  <circle
+                    cx="16"
+                    cy="16"
+                    r="14"
+                    stroke="#22c55e"
+                    strokeWidth="2"
+                  />
                   <polyline
                     points="9,17 14,22 23,11"
                     stroke="#22c55e"
@@ -82,24 +89,35 @@ export default function PaymentSuccess() {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-white mb-1">Payment Successful</h1>
-              <p className="text-gray-500 text-sm">Thank you! Your order is being processed.</p>
+              <h1 className="text-2xl font-bold text-white mb-1">
+                Payment Successful
+              </h1>
+              <p className="text-gray-500 text-sm">
+                Thank you! Your order is being processed.
+              </p>
             </div>
 
             {/* Order Details Box */}
             <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl divide-y divide-gray-700/50 mb-6">
               <div className="flex justify-between items-center px-5 py-3.5">
                 <span className="text-gray-400 text-sm">Order Reference</span>
-                <span className="text-white font-mono font-semibold text-sm">{orderRef || "—"}</span>
+                <span className="text-white font-mono font-semibold text-sm">
+                  {orderRef || "—"}
+                </span>
               </div>
               <div className="flex justify-between items-center px-5 py-3.5">
                 <span className="text-gray-400 text-sm">Email</span>
-                <span className="text-white text-sm">{paymentData?.customerEmail ?? "—"}</span>
+                <span className="text-white text-sm">
+                  {paymentData?.customerEmail ?? "—"}
+                </span>
               </div>
               <div className="flex justify-between items-center px-5 py-3.5">
                 <span className="text-gray-400 text-sm">Amount Paid</span>
                 <span className="text-green-400 font-semibold text-sm">
-                  ₹{paymentData?.amountTotal ? (paymentData.amountTotal / 100).toFixed(2) : "—"}
+                  ₹
+                  {paymentData?.amountTotal
+                    ? (paymentData.amountTotal / 100).toFixed(2)
+                    : "—"}
                 </span>
               </div>
             </div>
@@ -107,9 +125,21 @@ export default function PaymentSuccess() {
             {/* Steps */}
             <div className="space-y-2 mb-8">
               {[
-                { icon: "⚡", title: "Order Received", sub: "We've got it — processing now" },
-                { icon: "📦", title: "Packed & Shipped", sub: "Usually within 1–2 business days" },
-                { icon: "🚪", title: "Delivered to You", sub: "Sit back and relax!" },
+                {
+                  icon: "⚡",
+                  title: "Order Received",
+                  sub: "We've got it — processing now",
+                },
+                {
+                  icon: "📦",
+                  title: "Packed & Shipped",
+                  sub: "Usually within 1–2 business days",
+                },
+                {
+                  icon: "🚪",
+                  title: "Delivered to You",
+                  sub: "Sit back and relax!",
+                },
               ].map(({ icon, title, sub }) => (
                 <div
                   key={title}
@@ -143,7 +173,11 @@ export default function PaymentSuccess() {
 
           {/* Footer trust bar */}
           <div className="border-t border-gray-800 px-8 py-4 flex justify-center gap-8">
-            {[["🔒", "Secure Payment"], ["↩️", "Free Returns"], ["⚡", "Fast Shipping"]].map(([icon, label]) => (
+            {[
+              ["🔒", "Secure Payment"],
+              ["↩️", "Free Returns"],
+              ["⚡", "Fast Shipping"],
+            ].map(([icon, label]) => (
               <div key={label} className="flex items-center gap-1.5">
                 <span className="text-sm">{icon}</span>
                 <span className="text-gray-600 text-xs">{label}</span>
@@ -151,7 +185,6 @@ export default function PaymentSuccess() {
             ))}
           </div>
         </div>
-
       </div>
     </main>
   );

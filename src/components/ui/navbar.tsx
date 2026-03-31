@@ -2,13 +2,27 @@
 
 import Link from "next/link";
 import { ShoppingCart, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { toast } from "react-toastify";
+import { api } from "@/lib/axios";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
   const quantity = useSelector((state: RootState) => state.cart.totalQuantity);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+
+      toast.success("Logged out successfully");
+    } catch (error: any) {
+      console.log(error);
+      toast.error(error?.message || "Logout failed");
+    }
+  };
 
   return (
     <>
@@ -59,11 +73,6 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <button className="hidden md:inline-flex px-4 py-2 text-sm font-semibold text-gray-300 border border-white/15 rounded-xl hover:border-purple-500/50 hover:text-white transition-all duration-200 backdrop-blur-sm">
-                Login
-              </button>
-            </Link>
 
             <Link href="/cart">
               <button
@@ -81,6 +90,13 @@ export default function Navbar() {
                 )}
               </button>
             </Link>
+
+            <button
+              onClick={handleLogout}
+              className="hidden md:inline-flex px-4 py-2 text-sm font-semibold text-gray-300 border border-white/15 rounded-xl hover:border-purple-500/50 hover:text-white transition-all duration-200 backdrop-blur-sm"
+            >
+              Logout
+            </button>
 
             {/* Mobile toggle */}
             <button

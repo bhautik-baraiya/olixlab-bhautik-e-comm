@@ -7,17 +7,30 @@ export async function POST(req: Request) {
 
     const res = await registerUser(email, password);
 
-    if (!res) {
-      return NextResponse.json({
-        success: false,
-        message: "Register Error",
-      });
+    if (!res || !res.success || !res.user || !res.token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: res?.message || "Invalid credentials",
+        },
+        { status: 401 },
+      );
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: res.message,
     });
+
+    response.cookies.set("token", res.token, {
+      httpOnly: true,
+      secure: false, // for production "secure: true"
+      sameSite: "lax", // for production ""sameSite: "strict"""
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error) {
     console.error("REGISTER ERROR:", error);
     return NextResponse.json(

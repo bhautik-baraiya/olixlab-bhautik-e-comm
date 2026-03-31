@@ -26,7 +26,6 @@ export default function Cart({ userId }: { userId: number }) {
   const debouncedItems = useDebounce(items, 600);
   const isFirstRender = useRef(true);
 
-
   useEffect(() => {
     const fetchCart = async () => {
       try {
@@ -140,6 +139,7 @@ export default function Cart({ userId }: { userId: number }) {
             name: item.product.name,
             price: item.product.price,
             qty: item.qty,
+            productId: item.productId,
           })),
         }),
       });

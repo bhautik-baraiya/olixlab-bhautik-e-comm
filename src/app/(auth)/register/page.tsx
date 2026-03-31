@@ -12,41 +12,48 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+
+type FormData = {
+  email: string;
+  password: string;
+};
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
   const router = useRouter();
 
-  const handleRegister = async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>();
+
+  const onSubmit = async (formData: FormData) => {
     try {
-      console.log("Clicked...............");
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       });
 
-      const contentType = res.headers.get("content-type");
-      if (!contentType?.includes("application/json")) {
-        console.error("Server returned non-JSON response, status:", res.status);
-        return;
-      }
       const data = await res.json();
+      console.log(data);
+
       if (data.success) {
-        toast.success("Registered successfully! Redirecting...");
+        toast.success(data.message);
         router.push("/");
+      } else {
+        toast.error(data.message || "Register failed");
       }
     } catch (error) {
-      console.error(error);
+      console.log(error);
+      toast.error("Something went wrong");
     }
   };
 
@@ -61,34 +68,52 @@ export default function Register() {
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4">
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
             <div className="space-y-2">
               <Label>Email</Label>
               <Input
                 type="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email", {
+                  required: "Email is required",
+                })}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Password</Label>
               <Input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Minimum 6 characters required",
+                  },
+                })}
               />
+              {errors.password && (
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
+
+            <Button className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Registering..." : "Register"}
+            </Button>
           </form>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-3">
-          <Button className="w-full" onClick={handleRegister}>
-            Register
-          </Button>
-
           <p className="text-sm text-center text-gray-500">
             Already have an account?{" "}
             <Link href="/login" className="text-blue-600 hover:underline">

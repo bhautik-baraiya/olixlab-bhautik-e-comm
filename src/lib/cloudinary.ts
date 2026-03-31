@@ -6,7 +6,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadImage = async (file: File): Promise<string> => {
+export const uploadImage = async (file: File)=> {
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
   const dataUri = `data:${file.type};base64,${base64}`;
@@ -15,5 +15,16 @@ export const uploadImage = async (file: File): Promise<string> => {
     folder: "products",
   });
 
-  return result.secure_url; 
+  if (!result || !result.secure_url) {
+    return {
+      success: false,
+      message: "cloudinary result not generated",
+    };
+  }
+
+  return {
+    success: true,
+    url: result.secure_url,
+    message: "Image URL Created Successfully !!",
+  };
 };

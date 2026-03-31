@@ -8,13 +8,23 @@ export async function POST(req: NextRequest) {
 
     const userId: any = getUserFromToken(req);
 
-    console.log("userId------------", userId);
+    // console.log("userId------------", userId);
 
-    const res = await upsertProduct(userId, productId, qty);
+    const res = await upsertProduct({ userId, productId, qty });
 
-    // console.log(res);
+    if (!res || !res.success) {
+      return NextResponse.json({
+        success: false,
+        message: res?.message,
+      });
+    }
 
-    return NextResponse.json(res);
+    return NextResponse.json({
+      success: true,
+      message: res.message,
+      data: res.data,
+    });
+
   } catch (error) {
     return NextResponse.json({ success: false, message: error });
   }

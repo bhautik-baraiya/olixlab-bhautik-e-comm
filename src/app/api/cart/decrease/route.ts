@@ -8,13 +8,22 @@ export async function POST(req: NextRequest) {
     const { cartItemId } = await req.json();
 
     const userId: any = getUserFromToken(req);
-    console.log(userId)
 
-    const res = await decreaseQty(userId,cartItemId)
+    const res = await decreaseQty(userId, cartItemId);
 
-    return NextResponse.json(res);
+    if (!res || !res.success) {
+      return NextResponse.json({
+        success: false,
+        message: res?.message,
+      });
+    }
 
-   
+    return NextResponse.json({
+      success: true,
+      message: res.message,
+      data: res.data,
+    });
+
   } catch (error) {
     console.error(error);
     return NextResponse.json({

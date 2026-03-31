@@ -9,18 +9,29 @@ export async function GET(
   try {
     const { id } = await params;
 
-    if(!id){
-        NextResponse.json({
-            success:false,
-            message:"Id Not Display At Params !!"
-        });
+    if (!id) {
+      NextResponse.json({
+        success: false,
+        message: "Id Not Display At Params !!",
+      });
     }
-
-    console.log(id)
 
     const res = await getProductById(id);
 
-    return NextResponse.json(res);
+    if (!res || !res.success) {
+      return NextResponse.json({
+        success: false,
+        message: res?.message,
+      });
+    }
+    return NextResponse.json(
+      {
+        success: true,
+        message: res.message,
+        data: res.data,
+      },
+      { status: 200 },
+    );
   } catch (error) {
     console.log(error);
   }

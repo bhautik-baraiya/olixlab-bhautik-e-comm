@@ -1,5 +1,4 @@
 import { loginUser } from "@/controllers/auth.controller";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -8,10 +7,21 @@ export async function POST(req: Request) {
 
     const res = await loginUser(email, password);
 
-    console.log("res================================",res)
+    // console.log("res================================", res);
+
+    if (!res || !res.success || !res.token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: res?.message || "Invalid credentials",
+        },
+        { status: 401 },
+      );
+    }
 
     const response = NextResponse.json({
       success: true,
+      data: res.data,
       message: res.message,
     });
 
