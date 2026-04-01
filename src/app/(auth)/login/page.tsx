@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { api } from "@/lib/axios";
 
 type FormData = {
   email: string;
@@ -32,8 +33,10 @@ export default function Login() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>();
 
-  const onSubmit = async (formData: FormData) => {
+  const onSubmit = async (formData: FormData, e: any) => {
+    e.preventDefault();
     try {
+      // const res = await api.post
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {

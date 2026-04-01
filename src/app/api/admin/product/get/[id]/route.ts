@@ -32,7 +32,15 @@ export async function GET(
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.error("Get by Id Product API Error :", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: error?.message || "Internal Server Error",
+      },
+      { status: 500 },
+    );
   }
 }

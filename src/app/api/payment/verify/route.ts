@@ -11,14 +11,14 @@ export async function GET(req: NextRequest) {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    console.log("Session -------------", session);
+    // console.log("Session -------------", session);
 
     if (session.payment_status == "paid") {
       return NextResponse.json({
-        success: true,
+        success: session.payment_status === "paid",
         customerEmail: session.customer_details?.email,
         amountTotal: session.amount_total,
-        paymentIntent: session.payment_intent,
+        status: session.payment_status,
       });
     } else {
       return NextResponse.json({

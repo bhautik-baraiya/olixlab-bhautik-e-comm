@@ -7,6 +7,7 @@ import { addToCart } from "@/store/slices/cartSlice";
 import { RootState } from "@/store/store";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -36,8 +37,10 @@ export default function ShopPage() {
     setLoading(true);
     try {
       const res = await api.get("/admin/product/get");
+      console.log(res)
       setProducts(res.data.data);
-    } catch (error) {
+    } catch (error:any) {
+      toast.error(error?.response?.data?.message || "Failed to fetch products");
       console.log(error);
     } finally {
       setLoading(false);

@@ -1,10 +1,9 @@
-import { getProducts } from "@/controllers/product.controller";
-import { prisma } from "@/lib/prisma";
+import { getOrders } from "@/controllers/order.controller";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const res = await getProducts();
+    const res = await getOrders();
 
     if (!res || !res.success) {
       return NextResponse.json({
@@ -12,8 +11,6 @@ export async function GET() {
         message: res?.message,
       });
     }
-
-    // console.log(res);
 
     return NextResponse.json(
       {
@@ -24,7 +21,7 @@ export async function GET() {
       { status: 200 },
     );
   } catch (error) {
-    console.error("GET /products error:", error);
+    console.error("Orders Get error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error.", data: [] },
       { status: 500 },

@@ -21,7 +21,6 @@ export default function Cart({ userId }: { userId: number }) {
   );
   const [loading, setLoading] = useState(true);
 
-  console.log(items);
   const snapshotRef = useRef(items);
   const debouncedItems = useDebounce(items, 600);
   const isFirstRender = useRef(true);
@@ -32,7 +31,9 @@ export default function Cart({ userId }: { userId: number }) {
         const res = await fetch("/api/cart/get");
         const data = await res.json();
 
-        const mapped = data.cart.map((item: any) => ({
+        console.log(data);
+
+        const mapped = data?.data?.map((item: any) => ({
           cartItemId: item.id,
           productId: item.productId,
           qty: item.qty,
@@ -135,6 +136,7 @@ export default function Cart({ userId }: { userId: number }) {
       const res = await fetch("/api/payment/checkout", {
         method: "POST",
         body: JSON.stringify({
+          userId,
           items: snapshotRef.current.map((item) => ({
             name: item.product.name,
             price: item.product.price,

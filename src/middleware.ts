@@ -1,25 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PUBLIC_ROUTES = ["/login", "/register"];
+import { verifyToken } from "./lib/jwt";
 
 export async function middleware(req: NextRequest) {
+  const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
 
-  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
+    if (token) return NextResponse.redirect(new URL("/", req.url));
     return NextResponse.next();
   }
-
-  const token = req.cookies.get("token")?.value;
 
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  return NextResponse.next();
+  try {
+    const payload = await verifyToken(token);
+    
+    if (!payload) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    const role = payload?.role?.toString().toUpperCase(); 
+
+    
+    if (pathname.toLowerCase().startsWith("/admin")) {
+      if (role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/", req.url)); // Send non-admins home
+      }
+      return NextResponse.next(); 
+    }
+
+    return NextResponse.next();
+  } catch (err) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|login|register).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

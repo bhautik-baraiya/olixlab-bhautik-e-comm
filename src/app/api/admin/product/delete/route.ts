@@ -22,7 +22,15 @@ export async function DELETE(req: NextRequest) {
       },
       { status: 201 },
     );
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.error("Delete Product API Error :", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: error?.message || "Internal Server Error",
+      },
+      { status: 500 },
+    );
   }
 }

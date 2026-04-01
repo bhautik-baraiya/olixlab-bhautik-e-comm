@@ -72,22 +72,24 @@ export async function addAdminProduct(input: AddProductInput) {
 }
 
 export async function getProducts() {
-  const allProducts = await prisma.product.findMany();
+  try {
+    const allProducts = await prisma.product.findMany();
 
-  if (!allProducts) {
+    return {
+      success: true,
+      data: allProducts,
+      message: allProducts.length
+        ? "Products fetched successfully."
+        : "No products found.",
+    };
+  } catch (error) {
+    console.error("getProducts error:", error);
     return {
       success: false,
-      message: "Error While Fetching Product !!",
+      data: [],
+      message: "Error while fetching products.",
     };
   }
-
-  return {
-    success: true,
-    data: allProducts,
-    message: allProducts?.length
-      ? "Products fetched successfully."
-      : "No products found.",
-  };
 }
 
 export async function getProductById(id: string) {

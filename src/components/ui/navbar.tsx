@@ -7,17 +7,21 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { toast } from "react-toastify";
 import { api } from "@/lib/axios";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
   const quantity = useSelector((state: RootState) => state.cart.totalQuantity);
 
+  const router = useRouter();
+
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
 
       toast.success("Logged out successfully");
+      router.push("/login");
     } catch (error: any) {
       console.log(error);
       toast.error(error?.message || "Logout failed");

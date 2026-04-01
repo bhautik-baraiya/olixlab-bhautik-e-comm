@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (error: any) {
-    console.error("API ERROR:", error);
+    console.error("Add Product API Error :", error);
 
     return NextResponse.json(
       {

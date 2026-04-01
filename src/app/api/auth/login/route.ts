@@ -1,11 +1,18 @@
 import { loginUser } from "@/controllers/auth.controller";
 import { NextResponse } from "next/server";
 
+interface LoginResponse {
+  success: boolean;
+  token?: string;
+  data?: any;
+  message?: string;
+}
+
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
-    const res = await loginUser(email, password);
+    const res = await loginUser(email, password) as LoginResponse;
 
     // console.log("res================================", res);
 
@@ -21,11 +28,11 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({
       success: true,
-      data: res.data,
-      message: res.message,
+      data: res?.data,
+      message: res?.message,
     });
 
-    response.cookies.set("token", res.token, {
+    response.cookies.set("token", res?.token, {
       httpOnly: true,
       secure: false, // for production "secure: true"
       sameSite: "lax", // for production ""sameSite: "strict"""

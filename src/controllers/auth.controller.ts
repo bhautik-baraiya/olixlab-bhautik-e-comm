@@ -2,7 +2,7 @@ import { signToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-const expiresIn = process.env.expiresIn || "1d";
+const expiresIn:any = process.env.expiresIn || "1d";
 
 export async function registerUser(email: string, password: string) {
   if (!email || !password) {
@@ -31,7 +31,7 @@ export async function registerUser(email: string, password: string) {
       return { success: false, message: "User Creation Error" };
     }
 
-    const token = signToken({ id: user.id, email: user.email }, expiresIn);
+    const token = signToken({ email: user.email, role: user.role }, expiresIn);
 
     return { success: true, user, token, message: "Registered successfully" };
   } catch (error: any) {
@@ -65,9 +65,9 @@ export async function loginUser(email: string, password: string) {
       return { success: false, message: "Invalid Password !!!!" };
     }
 
-    const token = signToken({ id: user.id, email: user.email }, expiresIn);
+    const token = signToken({ email: user.email, role: user.role }, expiresIn);
 
-    // console.log("token------------------", token);
+    console.log("token------------------", token);
 
     return { success: true, token, data: user, message: "Login successfully" };
   } catch (error: any) {

@@ -3,17 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
   Package,
   PlusSquare,
   ShoppingBag,
-  ShoppingCart,
-  Users,
-  BarChart3,
-  Settings,
-  Bell,
   LogOut,
   ChevronRight,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/axios";
@@ -32,11 +27,18 @@ const navItems = [
   {
     label: "Catalog",
     items: [
+      { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
+      ,
       { icon: Package, label: "Products", href: "/admin/dashboard/products" },
       {
         icon: PlusSquare,
         label: "Add Product",
         href: "/admin/dashboard/products/add",
+      },
+      {
+        icon: ShoppingBag,
+        label: "Orders",
+        href: "/admin/dashboard/orders",
       },
     ],
   },
@@ -119,11 +121,11 @@ export default function Sidebar() {
                         )}
                       />
                       <span className="flex-1">{item.label}</span>
-                      {item.badge && (
+                      {/* {item.badge && (
                         <span className="text-[10px] font-bold bg-violet-500/20 text-violet-400 border border-violet-500/30 px-1.5 py-0.5 rounded-md">
                           {item.badge}
                         </span>
-                      )}
+                      )} */}
                       {isActive && (
                         <ChevronRight className="w-3 h-3 text-violet-400/60" />
                       )}
