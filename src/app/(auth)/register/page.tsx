@@ -31,7 +31,7 @@ export default function Register() {
 
       if (data.success) {
         toast.success(data.message);
-        router.push("/");
+        // router.push("/");
       } else {
         toast.error(data.message || "Register failed");
       }

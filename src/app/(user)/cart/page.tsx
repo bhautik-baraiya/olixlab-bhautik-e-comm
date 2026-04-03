@@ -14,6 +14,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { CartItem } from "@/store/slices/cartSlice";
+import Loader from "@/components/ui/loader";
 
 export default function Cart({ userId }: { userId: number }) {
   const dispatch = useDispatch();
@@ -24,7 +25,6 @@ export default function Cart({ userId }: { userId: number }) {
 
   const snapshotRef = useRef(items);
   const debouncedItems = useDebounce(items, 600);
-  const isFirstRender = useRef(true);
   const isMounted = useRef(false);
 
   useEffect(() => {
@@ -36,6 +36,8 @@ export default function Cart({ userId }: { userId: number }) {
       try {
         const res = await fetch("/api/cart/get");
         const data = await res.json();
+
+        // console.log(data.data)
 
         const mapped: CartItem[] = data?.data?.map((item: any) => ({
           cartItemId: item.id,
@@ -49,7 +51,7 @@ export default function Cart({ userId }: { userId: number }) {
           },
         }));
 
-        dispatch(setCart(mapped)); // ✅ stamps lastSyncedAt in slice
+        dispatch(setCart(mapped));
         snapshotRef.current = mapped;
       } catch (error) {
         toast.error("Failed to load cart");
@@ -178,7 +180,7 @@ export default function Cart({ userId }: { userId: number }) {
   if (loading) {
     return (
       <div className="bg-transparent min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-white/20 border-t-violet-500 rounded-full animate-spin" />
+        <Loader />
       </div>
     );
   }

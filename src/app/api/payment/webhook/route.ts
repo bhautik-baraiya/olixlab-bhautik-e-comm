@@ -5,9 +5,9 @@ import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
-  console.log("body-----", body);
+  // console.log("body-----", body);
   const sig = req.headers.get("stripe-signature")!;
-  console.log("sig-----", sig);
+  // console.log("sig-----", sig);
 
   if (!sig) {
     return NextResponse.json({ error: "No signature" }, { status: 400 });
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const items: { productId: string; qty: number; price: number }[] =
       JSON.parse(rawItems);
 
-    console.log(items);
+    // console.log(items);
 
     try {
       const order = await prisma.order.create({
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log("order=-=-=-=----=-=-=-=-=-=-=--=-=-", order);
+      // console.log("order=-=-=-=----=-=-=-=-=-=-=--=-=-", order);
       // 2️⃣ Reduce stock for each product
       await Promise.all(
         items.map((item) =>
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       );
       // 3️⃣ Clear the user's cart
       await prisma.cartItem.deleteMany({ where: { userId } });
-      console.log(`✅ Order saved for user ${userId}, session ${session.id}`);
+      // console.log(`✅ Order saved for user ${userId}, session ${session.id}`);
     } catch (dbErr) {
       console.error("DB error in webhook:", dbErr);
       // Return 500 so Stripe retries the webhook

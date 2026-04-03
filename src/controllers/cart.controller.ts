@@ -135,20 +135,25 @@ export async function decreaseQty(userId: string, cartItemId: string) {
   }
 }
 
-export async function getCartItems(userId: string) {
-  // console.log("userId =-=-=-=-=-=-=--=-=--=-=-", userId);
-
-  // if (!userId?.trim()) {
-  //   return { success: false, message: "Unauthorized." };
-  // }
-
+export async function getCartItems(
+  userId: string,
+  page: number = 1,
+  limit: number = 8,
+) {
   try {
     const cart = await prisma.cartItem.findMany({
       where: { userId },
       include: { product: true },
     });
 
-    console.log("cart =-=-=-=-=-=--=",cart)
+    if (!cart) {
+      return {
+        success: false,
+        message: "Error fetching cart items",
+      };
+    }
+
+    // const totalPages = Math.ceil(total / limit);
 
     return {
       success: true,

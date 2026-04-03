@@ -2,9 +2,16 @@ import { getProducts } from "@/controllers/product.controller";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const res = await getProducts();
+    const { searchParams } = new URL(req.url);
+    console.log(searchParams.get("page"), searchParams.get("limit"));
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "8");
+    const category = searchParams.get("category");
+    const data = searchParams.get("data");
+
+    const res = await getProducts(page, limit, category, data);
 
     if (!res || !res.success) {
       return NextResponse.json({
@@ -20,6 +27,7 @@ export async function GET() {
         success: true,
         message: res.message,
         data: res.data,
+        totalPages: res.totalPages,
       },
       { status: 200 },
     );

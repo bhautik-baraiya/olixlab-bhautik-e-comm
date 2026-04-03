@@ -20,7 +20,7 @@ export async function DELETE(req: NextRequest) {
         message: res.message,
         data: res.data,
       },
-      { status: 201 },
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Delete Product API Error :", error);

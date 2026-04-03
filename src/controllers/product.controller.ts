@@ -71,14 +71,45 @@ export async function addAdminProduct(input: AddProductInput) {
   }
 }
 
-export async function getProducts() {
+export async function getProducts(
+  page: number = 1,
+  limit: number = 8,
+  category?: string | null,
+  data?: string | null,
+) {
   try {
-    const allProducts = await prisma.product.findMany();
+    const skip = (page - 1) * limit;
+    const filters: any = {};
+
+    if (category) {
+      const categoryArray = category.split(",");
+      filters.category = {
+        in: categoryArray,
+      };
+    }
+
+    let products;
+    if (data == "all") {
+      products = await prisma.product.findMany();
+    } else {
+      products = await prisma.product.findMany({
+        where: filters,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    const total = await prisma.product.count({
+      where: filters,
+    });
+    const totalPages = Math.ceil(total / limit);
 
     return {
       success: true,
-      data: allProducts,
-      message: allProducts.length
+      data: products,
+      totalPages,
+      message: products.length
         ? "Products fetched successfully."
         : "No products found.",
     };
@@ -128,12 +159,14 @@ export async function deleteProduct(productId: string) {
   }
 
   try {
+
+    
     const product = await prisma.product.findFirst({
       where: {
         id: productId,
       },
     });
-
+    
     if (!product) {
       return {
         success: false,
@@ -144,16 +177,18 @@ export async function deleteProduct(productId: string) {
     const deletedProduct = await prisma.product.delete({
       where: { id: productId },
     });
+    
+    console.log(deletedProduct)
 
     return {
       success: true,
       data: deletedProduct,
-      message: "Product removed from cart",
+      message: "Product removed ",
     };
   } catch (error) {
     return {
       success: false,
-      message: "Product removed from cart error",
+      message: "Product removed error",
     };
   }
 }

@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const userId: any = await getUserFromToken(req);
 
+
     const res = await getCartItems(userId);
 
     if (!res || !res.success) {

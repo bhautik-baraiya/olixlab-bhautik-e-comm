@@ -5,6 +5,7 @@ import Loader from "@/components/ui/loader";
 import { api } from "@/lib/axios";
 import { addToCart } from "@/store/slices/cartSlice";
 import { RootState } from "@/store/store";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -31,15 +32,18 @@ export default function ShopPage() {
   const [category, setCategory] = useState("All Categories");
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<boolean>(true);
-
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/admin/product/get");
-      // console.log(res)
+      const res = await api.get(`/admin/product/get?page=${page}&limit=8`);
+      console.log(res.data);
       setProducts(res.data.data);
-    } catch (error:any) {
+      setTotalPages(res.data.totalPages);
+    } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to fetch products");
       console.log(error);
     } finally {
@@ -47,9 +51,9 @@ export default function ShopPage() {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, [page]);
 
   const handleAddToCart = async (item: Product) => {
     try {
@@ -61,12 +65,13 @@ export default function ShopPage() {
           qty: 1,
         }),
       });
-      // console.log(res)
       const data = await res.json();
-      // console.log(data)
-      // console.log("response -------", item);
+      console.log(data);
+      toast[data.success ? "success" : "error"](data.message);
+
       dispatch(
         addToCart({
+          cartItemId: data.data.id,
           productId: item.id,
           qty: 1,
           product: {
@@ -90,11 +95,51 @@ export default function ShopPage() {
     }
   };
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = category === "All Categories" || p.category === category;
-    return matchSearch && matchCat;
-  });
+  const fetchCategoryData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/admin/product/get?category=${category}`);
+      console.log(res.data.data);
+      setProducts(res.data.data);
+      setTotalPages(res.data.totalPages);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategoryData();
+  }, [category,page]);
+
+  const router = useRouter();
+
+  const handleViewDetails = (id: string) => {
+    try {
+      router.push(`/shop/${id}`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/product/categories");
+      console.log(res.data);
+      setCategories(res.data.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
 
   const discount = (orig: number, sell: number) =>
     Math.round(((orig - sell) / orig) * 100);
@@ -131,7 +176,7 @@ export default function ShopPage() {
       </section>
 
       {loading ? (
-        <div className="w-full h-full ">
+        <div className="w-full min-h-screen flex justify-center items-center">
           <Loader />
         </div>
       ) : (
@@ -157,10 +202,16 @@ export default function ShopPage() {
                 onChange={(e) => setCategory(e.target.value)}
                 className="px-5 py-3 rounded-2xl border border-white/10 bg-white/5 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 backdrop-blur-sm appearance-none cursor-pointer transition"
               >
-                <option className="bg-gray-900">All Categories</option>
-                <option className="bg-gray-900">Electronics</option>
-                <option className="bg-gray-900">Fashion</option>
-                <option className="bg-gray-900">Accessories</option>
+                {categories.length > 0 && (
+                  <>
+                    <option className="bg-gray-900">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat} className="bg-gray-900">
+                        {cat}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </section>
 
@@ -168,7 +219,7 @@ export default function ShopPage() {
           </section>
 
           {/* Empty state */}
-          {filtered.length === 0 ? (
+          {products.length === 0 ? (
             <div className="text-center mt-24 text-gray-500">
               <p className="text-5xl mb-4">🛍️</p>
               <p className="text-lg font-semibold text-gray-400">
@@ -179,7 +230,7 @@ export default function ShopPage() {
           ) : (
             <>
               <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7 max-w-7xl mx-auto">
-                {filtered.map((p) => {
+                {products.map((p) => {
                   const disc = discount(p.originalPrice, p.sellingPrice);
                   const isAdded = addedIds.has(p.id);
 
@@ -266,27 +317,33 @@ export default function ShopPage() {
                         >
                           {isAdded ? "✓ Added!" : "Add to Cart"}
                         </button>
+                        <button
+                          onClick={() => handleViewDetails(p.id)}
+                          className={`mt-1 w-full py-2.5 rounded-2xl text-sm font-bold tracking-wide transition-all duration-300 bg-emerald-500 text-white scale-95" hover:scale-[1.03] active:scale-95`}
+                        >
+                          View Details
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </section>
-
-              {/* ── Pagination ── */}
-              <div className="flex justify-center mt-20 gap-3">
-                {[1, 2, 3].map((num) => (
-                  <button
-                    key={num}
-                    className="w-10 h-10 rounded-xl border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white hover:scale-110 transition-all duration-200 font-semibold text-sm"
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
             </>
           )}
         </>
       )}
+      {/* ── Pagination ── */}
+      <div className="flex justify-center mt-20 gap-3">
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+          <button
+            onClick={() => setPage(num)}
+            key={num}
+            className="w-10 h-10 rounded-xl border border-white/10 text-gray-400 hover:bg-white/10 hover:text-white hover:scale-110 transition-all duration-200 font-semibold text-sm"
+          >
+            {num}
+          </button>
+        ))}
+      </div>
 
       {/* Font import */}
       <style>{`

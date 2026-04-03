@@ -18,7 +18,7 @@ export default function ProductActionMenu({
   onDelete,
 }: {
   productId: string;
-  onDelete: (id: string) => void; // ← add this
+  onDelete: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
