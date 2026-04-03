@@ -12,7 +12,9 @@ export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
-    const res = await loginUser(email, password) as LoginResponse;
+    const res = (await loginUser(email, password)) as LoginResponse;
+
+    console.log(res);
 
     if (!res || !res.success || !res.token) {
       return NextResponse.json(
@@ -32,8 +34,8 @@ export async function POST(req: Request) {
 
     response.cookies.set("token", res?.token, {
       httpOnly: true,
-      secure: false, // for production "secure: true"
-      sameSite: "lax", // for production "sameSite: "strict"
+      secure: process.env.NODE_ENV === "development" ? false : true, 
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "strict", 
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });

@@ -5,7 +5,7 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/register") || pathname.startsWith("/verify-email")) {
     if (token) return NextResponse.redirect(new URL("/", req.url));
     return NextResponse.next();
   }
@@ -24,6 +24,10 @@ export async function middleware(req: NextRequest) {
     }
 
     if (payload == "EXPIRED") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    if(payload?.isEmailVerified === false) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 

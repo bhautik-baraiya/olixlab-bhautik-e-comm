@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { SignJWT, jwtVerify, errors } from "jose";
 
 const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "bhautik12345",
+  process.env.JWT_SECRET!,
 );
 
 export async function signToken(payload: object, expiresIn: string = "1d") {
@@ -19,8 +19,6 @@ export async function verifyToken(token: string) {
     // console.log("token ========", token);
 
     const { payload } = await jwtVerify(token, secret);
-
-    // console.log("payload ========", payload);
 
     return payload;
   } catch (error) {

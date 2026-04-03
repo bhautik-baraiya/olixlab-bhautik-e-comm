@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
     const res = await registerUser(email, password);
 
-    if (!res || !res.success || !res.user || !res.token) {
+    if (!res || !res.success || !res.data || !res.token) {
       return NextResponse.json(
         {
           success: false,
@@ -22,10 +22,10 @@ export async function POST(req: Request) {
       message: res.message,
     });
 
-    response.cookies.set("token", res.token, {
+    response.cookies.set("token", res?.token, {
       httpOnly: true,
-      secure: false, // for production "secure: true"
-      sameSite: "lax", // for production ""sameSite: "strict"""
+      secure: process.env.NODE_ENV === "development" ? false : true,
+      sameSite: process.env.NODE_ENV === "development" ? "lax" : "strict",
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
