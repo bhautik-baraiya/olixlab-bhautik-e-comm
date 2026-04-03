@@ -5,8 +5,6 @@ export async function POST() {
   try {
     const cookieStore = await cookies(); 
 
-    console.log("cookieStore",cookieStore)
-
     cookieStore.delete("token");
 
     return NextResponse.json({

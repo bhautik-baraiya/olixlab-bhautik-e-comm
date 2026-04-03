@@ -16,19 +16,24 @@ export async function middleware(req: NextRequest) {
 
   try {
     const payload = await verifyToken(token);
-    
+
+    // console.log(payload)
+
     if (!payload) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    const role = payload?.role?.toString().toUpperCase(); 
+    if (payload == "EXPIRED") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-    
+    const role = payload?.role?.toString().toUpperCase();
+
     if (pathname.toLowerCase().startsWith("/admin")) {
       if (role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/", req.url)); // Send non-admins home
+        return NextResponse.redirect(new URL("/", req.url));
       }
-      return NextResponse.next(); 
+      return NextResponse.next();
     }
 
     return NextResponse.next();

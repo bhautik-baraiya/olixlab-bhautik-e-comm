@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     const { productId, name, qty = 1 } = await req.json();
 
-    const userId: any = getUserFromToken(req);
+    const userId: any = await getUserFromToken(req);
 
     // console.log("userId------------", userId);
 

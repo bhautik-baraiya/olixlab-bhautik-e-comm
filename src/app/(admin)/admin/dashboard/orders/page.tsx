@@ -17,7 +17,7 @@ import { api } from "@/lib/axios";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type OrderStatus = "PENDING" | "PAID" | "CANCELLED";
 
 type OrderItem = {
   id: string;
@@ -42,51 +42,12 @@ type Order = {
 const statusConfig: Record<OrderStatus, { label: string; icon: React.ReactNode; cls: string }> = {
   PENDING:   { label: "Pending",   icon: <Clock className="w-3 h-3" />,        cls: "bg-amber-500/10   text-amber-400   border border-amber-500/20"   },
   PAID:      { label: "Paid",      icon: <CheckCircle2 className="w-3 h-3" />, cls: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" },
-  SHIPPED:   { label: "Shipped",   icon: <Truck className="w-3 h-3" />,        cls: "bg-blue-500/10    text-blue-400    border border-blue-500/20"    },
-  DELIVERED: { label: "Delivered", icon: <CheckCircle2 className="w-3 h-3" />, cls: "bg-violet-500/10  text-violet-400  border border-violet-500/20"  },
   CANCELLED: { label: "Cancelled", icon: <XCircle className="w-3 h-3" />,      cls: "bg-red-500/10     text-red-400     border border-red-500/20"     },
 };
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
 
-// ─── Example data ─────────────────────────────────────────────────────────────
-
-const EXAMPLE_ORDERS: Order[] = [
-  {
-    id: "ORD-8821", stripeSessionId: "cs_test_a1", amountTotal: 14200,
-    customerEmail: "priya@example.com", status: "DELIVERED",
-    createdAt: new Date().toISOString(),
-    items: [{ id: "i1", productId: "p1", quantity: 1, price: 142, product: { name: "Nike Air Max 270", image: "https://placehold.co/40" } }],
-  },
-  {
-    id: "ORD-8820", stripeSessionId: "cs_test_a2", amountTotal: 25000,
-    customerEmail: "rahul@example.com", status: "SHIPPED",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    items: [
-      { id: "i2", productId: "p2", quantity: 1, price: 130, product: { name: "Sony WH-1000XM5", image: "https://placehold.co/40" } },
-      { id: "i3", productId: "p3", quantity: 1, price: 120, product: { name: "Phone Case", image: "https://placehold.co/40" } },
-    ],
-  },
-  {
-    id: "ORD-8819", stripeSessionId: "cs_test_a3", amountTotal: 46593,
-    customerEmail: "ananya@example.com", status: "PAID",
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    items: [{ id: "i4", productId: "p4", quantity: 1, price: 465, product: { name: "Apple Watch SE", image: "https://placehold.co/40" } }],
-  },
-  {
-    id: "ORD-8818", stripeSessionId: "cs_test_a4", amountTotal: 8500,
-    customerEmail: "vikram@example.com", status: "PENDING",
-    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    items: [{ id: "i5", productId: "p5", quantity: 2, price: 42, product: { name: "USB-C Hub", image: "https://placehold.co/40" } }],
-  },
-  {
-    id: "ORD-8817", stripeSessionId: "cs_test_a5", amountTotal: 3200,
-    customerEmail: "sneha@example.com", status: "CANCELLED",
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    items: [{ id: "i6", productId: "p6", quantity: 1, price: 32, product: { name: "Laptop Stand", image: "https://placehold.co/40" } }],
-  },
-];
 
 // ─── Skeleton row ─────────────────────────────────────────────────────────────
 
@@ -208,7 +169,7 @@ export default function OrdersPage() {
 
             {/* Status filter pills */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              {(["ALL", "PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"] as const).map((s) => (
+              {(["ALL", "PENDING", "PAID", "CANCELLED"] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}

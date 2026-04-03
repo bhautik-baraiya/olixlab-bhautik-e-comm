@@ -37,7 +37,7 @@ export default function ShopPage() {
     setLoading(true);
     try {
       const res = await api.get("/admin/product/get");
-      console.log(res)
+      // console.log(res)
       setProducts(res.data.data);
     } catch (error:any) {
       toast.error(error?.response?.data?.message || "Failed to fetch products");
@@ -63,7 +63,8 @@ export default function ShopPage() {
       });
       // console.log(res)
       const data = await res.json();
-      console.log("response -------", item);
+      // console.log(data)
+      // console.log("response -------", item);
       dispatch(
         addToCart({
           productId: item.id,
@@ -71,7 +72,8 @@ export default function ShopPage() {
           product: {
             name: item.name,
             image: item.image,
-            price: item.sellingPrice
+            price: item.sellingPrice,
+            stock: item.stock,
           },
         }),
       );

@@ -18,6 +18,9 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
+      await api.post("/cart/clear");
+      console.log("Cart cleared successfully")
+
       await api.post("/auth/logout");
 
       toast.success("Logged out successfully");
@@ -77,7 +80,6 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-
             <Link href="/cart">
               <button
                 className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"

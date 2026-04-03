@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getUserFromToken } from "@/lib/jwt";
-import { decreaseQty } from "@/controllers/cart.controller";
+import { clearCart } from "@/controllers/cart.controller";
 
 export async function POST(req: NextRequest) {
   try {
-    const { cartItemId } = await req.json();
 
     const userId: any = await getUserFromToken(req);
 
-    const res = await decreaseQty(userId, cartItemId);
+    // console.log("userId ==================",userId)
+
+    const res = await clearCart(userId);
 
     if (!res || !res.success) {
       return NextResponse.json({
@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
       message: res.message,
       data: res.data,
     });
-
   } catch (error) {
     console.error(error);
     return NextResponse.json({

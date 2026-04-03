@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-  console.log(webhookSecret);
+  // console.log(webhookSecret);
 
   if (!webhookSecret) {
     return NextResponse.json({ error: "No webhookSecret" }, { status: 400 });
@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
     const items: { productId: string; qty: number; price: number }[] =
       JSON.parse(rawItems);
 
-    try {
+    console.log(items);
 
-      await prisma.order.create({
+    try {
+      const order = await prisma.order.create({
         data: {
           userId,
           stripeSessionId: session.id,
@@ -65,18 +66,20 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+
+      console.log("order=-=-=-=----=-=-=-=-=-=-=--=-=-", order);
       // 2️⃣ Reduce stock for each product
       await Promise.all(
         items.map((item) =>
           prisma.product.update({
             where: { id: item.productId },
             data: { stock: { decrement: item.qty } },
-          })
-        )
+          }),
+        ),
       );
       // 3️⃣ Clear the user's cart
-      // await db.cartItem.deleteMany({ where: { userId } });
-      //  console.log(`✅ Order saved for user ${userId}, session ${session.id}`);
+      await prisma.cartItem.deleteMany({ where: { userId } });
+      console.log(`✅ Order saved for user ${userId}, session ${session.id}`);
     } catch (dbErr) {
       console.error("DB error in webhook:", dbErr);
       // Return 500 so Stripe retries the webhook

@@ -67,8 +67,6 @@ model Product {
 enum OrderStatus {
   PENDING
   PAID
-  SHIPPED
-  DELIVERED
   CANCELLED
 }
 

@@ -6,7 +6,9 @@ export async function POST(req: NextRequest) {
   try {
     const { cartItemId } = await req.json();
 
-    const userId: any = getUserFromToken(req);
+    const userId: any = await getUserFromToken(req);
+
+    // console.log("userId ==================",userId)
 
     const res = await removeCartItems(cartItemId, userId);
 

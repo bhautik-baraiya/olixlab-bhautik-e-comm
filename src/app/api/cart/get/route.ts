@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const userId: any = getUserFromToken(req);
+    const userId: any = await getUserFromToken(req);
 
     const res = await getCartItems(userId);
 

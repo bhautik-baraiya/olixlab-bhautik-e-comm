@@ -9,16 +9,26 @@ export async function POST(req: NextRequest) {
     const token = req.cookies.get("token")?.value;
 
     if (!token) {
+      return NextResponse.json(
+        { error: "Unauthorized Because of Token" },
+        { status: 401 },
+      );
+    }
+
+    const payload = await verifyToken(token);
+
+    if (!payload || payload === "EXPIRED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
+    const userId =
+      payload.sub ?? (payload as any).userId ?? (payload as any).id;
+    const userEmail = (payload as any).email;
 
-    const userId = decoded.id;
-
-    const session = await stripe.checkout.sessions.create({
+    const session = await (stripe.checkout.sessions as any).create({
       payment_method_types: ["card"],
       mode: "payment",
+      customer_email: userEmail,
 
       line_items: items.map((item: any) => ({
         price_data: {

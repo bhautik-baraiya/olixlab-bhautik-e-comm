@@ -13,10 +13,11 @@ import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { CartItem } from "@/store/slices/cartSlice";
 
 export default function Cart({ userId }: { userId: number }) {
   const dispatch = useDispatch();
-  const { items, totalAmount, totalQuantity } = useSelector(
+  const { items, totalAmount, totalQuantity, lastSyncedAt } = useSelector(
     (state: RootState) => state.cart,
   );
   const [loading, setLoading] = useState(true);
@@ -24,48 +25,51 @@ export default function Cart({ userId }: { userId: number }) {
   const snapshotRef = useRef(items);
   const debouncedItems = useDebounce(items, 600);
   const isFirstRender = useRef(true);
+  const isMounted = useRef(false);
 
   useEffect(() => {
+    const STALE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    const isStale =
+      !lastSyncedAt || Date.now() - lastSyncedAt > STALE_THRESHOLD;
+
     const fetchCart = async () => {
       try {
         const res = await fetch("/api/cart/get");
         const data = await res.json();
 
-        console.log(data);
-
-        const mapped = data?.data?.map((item: any) => ({
+        const mapped: CartItem[] = data?.data?.map((item: any) => ({
           cartItemId: item.id,
           productId: item.productId,
           qty: item.qty,
           product: {
             name: item.product.name,
             image: item.product.image,
-            price: item.product.sellingPrice,
+            price: Number(item.product.sellingPrice),
+            stock: Number(item.product.stock),
           },
         }));
 
-        dispatch(setCart(mapped));
+        dispatch(setCart(mapped)); // ✅ stamps lastSyncedAt in slice
         snapshotRef.current = mapped;
       } catch (error) {
-        console.log(error);
         toast.error("Failed to load cart");
       } finally {
         setLoading(false);
+        isMounted.current = true;
       }
     };
 
-    fetchCart();
+    if (isStale) {
+      fetchCart();
+    } else {
+      snapshotRef.current = items;
+      setLoading(false);
+      isMounted.current = true;
+    }
   }, []);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (debouncedItems.length === 0) return;
-
-    console.log(debouncedItems);
+    if (!isMounted.current) return;
 
     const syncWithDB = async () => {
       try {
@@ -91,27 +95,36 @@ export default function Cart({ userId }: { userId: number }) {
     syncWithDB();
   }, [debouncedItems]);
 
-  const handleAdd = (item: any) => {
-    if (item.qty >= item.product.stock) return;
+  const handleAdd = (item: CartItem) => {
+    if (item.qty >= item.product.stock) {
+      toast.error("Cannot add more, stock limit reached");
+      return;
+    }
 
     dispatch(
       addToCart({
+        cartItemId: item.cartItemId,
         productId: item.productId,
         qty: 1,
         product: {
           name: item.product.name,
           image: item.product.image,
           price: item.product.price,
+          stock: item.product.stock,
         },
       }),
     );
   };
 
-  const handleDecrease = (item: any) => {
+  const handleDecrease = async (item: CartItem) => {
+    if (item.qty === 1) {
+      await handleRemove(item);
+      return;
+    }
     dispatch(decreaseQuantity(item.productId));
   };
 
-  const handleRemove = async (item: any) => {
+  const handleRemove = async (item: CartItem) => {
     const snapshot = [...items];
     dispatch(removeFromCart(item.productId));
 
@@ -123,7 +136,10 @@ export default function Cart({ userId }: { userId: number }) {
       });
       const data = await res.json();
       if (!data.success) throw new Error();
-      snapshotRef.current = items.filter((i) => i.productId !== item.productId);
+
+      snapshotRef.current = snapshot.filter(
+        (i) => i.productId !== item.productId,
+      );
       toast.success("Item removed from cart");
     } catch {
       dispatch(rollbackCart(snapshot));
@@ -135,6 +151,7 @@ export default function Cart({ userId }: { userId: number }) {
     try {
       const res = await fetch("/api/payment/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           items: snapshotRef.current.map((item) => ({
@@ -148,15 +165,13 @@ export default function Cart({ userId }: { userId: number }) {
 
       const data = await res.json();
 
-      console.log(data);
-
       if (!data.url) {
-        alert("Checkout failed. Please try again.");
+        toast.error("Checkout failed. Please try again.");
       } else {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.log(error);
+      toast.error("Something went wrong during checkout.");
     }
   };
 
@@ -230,7 +245,6 @@ export default function Cart({ userId }: { userId: number }) {
         .card-glow:hover { box-shadow: 0 0 35px rgba(167,139,250,0.15); }
       `}</style>
 
-      {/* Header */}
       <section className="mb-12 text-center">
         <p className="text-xs uppercase tracking-[0.35em] text-purple-400 font-semibold mb-3">
           Review & Checkout
@@ -244,78 +258,70 @@ export default function Cart({ userId }: { userId: number }) {
       </section>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* ── Cart Items ── */}
         <div className="lg:col-span-2 space-y-4">
-          {items.map((item) => {
-            return (
-              <div
-                key={item.productId}
-                className="group flex gap-5 p-5 rounded-3xl border border-white/10 hover:border-purple-500/30 card-glow transition-all duration-300"
-                style={{ background: "rgba(255,255,255,0.04)" }}
-              >
-                {/* Image */}
-                <div className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border border-white/10">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
+          {items.map((item) => (
+            <div
+              key={item.productId}
+              className="group flex gap-5 p-5 rounded-3xl border border-white/10 hover:border-purple-500/30 card-glow transition-all duration-300"
+              style={{ background: "rgba(255,255,255,0.04)" }}
+            >
+              <div className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 border border-white/10">
+                <img
+                  src={item.product.image}
+                  alt={item.product.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <span className="text-xs text-purple-400 font-semibold uppercase tracking-widest">
-                    Product
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-purple-400 font-semibold uppercase tracking-widest">
+                  Product
+                </span>
+                <h3 className="font-display text-white font-bold text-base mt-0.5 truncate">
+                  {item.product.name}
+                </h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-white text-sm font-semibold">
+                    ₹{item.product.price}
                   </span>
-                  <h3 className="font-display text-white font-bold text-base mt-0.5 truncate">
-                    {item.product.name}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-white text-sm font-semibold">
-                      ₹{item.product.price}
-                    </span>
-                  </div>
-
-                  {/* Qty controls */}
-                  <div className="flex items-center gap-2 mt-4">
-                    <button
-                      onClick={() => handleDecrease(item)}
-                      className="w-8 h-8 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/50 transition-all duration-200 font-bold text-lg flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.05)" }}
-                    >
-                      −
-                    </button>
-                    <span className="font-display text-white font-bold w-6 text-center text-sm">
-                      {item.qty}
-                    </span>
-                    <button
-                      onClick={() => handleAdd(item)}
-                      className="w-8 h-8 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/50 transition-all duration-200 font-bold text-lg flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.05)" }}
-                    >
-                      +
-                    </button>
-                  </div>
                 </div>
 
-                {/* Right: total + remove */}
-                <div className="flex flex-col items-end justify-between flex-shrink-0">
-                  <p className="font-display text-white font-black text-lg">
-                    ₹{(item.product.price * item.qty).toFixed(2)}
-                  </p>
+                <div className="flex items-center gap-2 mt-4">
                   <button
-                    onClick={() => handleRemove(item)}
-                    className="text-xs text-gray-600 hover:text-red-400 transition-colors duration-200 flex items-center gap-1 mt-2"
+                    onClick={() => handleDecrease(item)}
+                    className="w-8 h-8 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/50 transition-all duration-200 font-bold text-lg flex items-center justify-center"
+                    style={{ background: "rgba(255,255,255,0.05)" }}
                   >
-                    <span>✕</span> Remove
+                    −
+                  </button>
+                  <span className="font-display text-white font-bold w-6 text-center text-sm">
+                    {item.qty}
+                  </span>
+                  <button
+                    onClick={() => handleAdd(item)}
+                    className="w-8 h-8 rounded-xl border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/50 transition-all duration-200 font-bold text-lg flex items-center justify-center"
+                    style={{ background: "rgba(255,255,255,0.05)" }}
+                  >
+                    +
                   </button>
                 </div>
               </div>
-            );
-          })}
+
+              <div className="flex flex-col items-end justify-between flex-shrink-0">
+                <p className="font-display text-white font-black text-lg">
+                  ₹{(item.product.price * item.qty).toFixed(2)}
+                </p>
+                <button
+                  onClick={() => handleRemove(item)}
+                  className="text-xs text-gray-600 hover:text-red-400 transition-colors duration-200 flex items-center gap-1 mt-2"
+                >
+                  <span>✕</span> Remove
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* ── Order Summary ── */}
         <div
           className="h-fit rounded-3xl border border-white/10 p-7 sticky top-24"
           style={{ background: "rgba(255,255,255,0.05)" }}
@@ -324,7 +330,6 @@ export default function Cart({ userId }: { userId: number }) {
             Summary
           </h2>
 
-          {/* Item breakdown */}
           <div className="space-y-3 mb-5">
             {items.map((item) => (
               <div
@@ -383,7 +388,6 @@ export default function Cart({ userId }: { userId: number }) {
             </button>
           </Link>
 
-          {/* Trust badges */}
           <div className="mt-6 flex justify-center gap-4 text-center">
             {[
               ["🔒", "Secure"],

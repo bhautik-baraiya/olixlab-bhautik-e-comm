@@ -1,12 +1,14 @@
 "use client";
 
 import Loader from "@/components/ui/loader";
+import { api } from "@/lib/axios";
 import { clearCart } from "@/store/slices/cartSlice";
 import { RootState } from "@/store/store";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 export default function PaymentSuccess() {
   const [orderRef, setOrderRef] = useState("");
@@ -38,7 +40,7 @@ export default function PaymentSuccess() {
         const data = await res.json();
         if (data.success) {
           dispatch(clearCart());
-          setPaymentData(data);
+          setPaymentData(data); 
         }
       } catch (err) {
         console.error("Verification failed:", err);

@@ -1,12 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 type CartItem = {
+  cartItemId: string;
   productId: string;
   qty: number;
   product: {
     name: string;
     image: string;
     price: number;
+    stock: number;
   };
 };
 
@@ -14,12 +16,14 @@ type CartState = {
   items: CartItem[];
   totalAmount: number;
   totalQuantity: number;
+  lastSyncedAt: number | null;
 };
 
 const initialState: CartState = {
   items: [],
   totalAmount: 0,
   totalQuantity: 0,
+  lastSyncedAt: null,
 };
 
 const recalculate = (state: CartState) => {
@@ -36,6 +40,7 @@ const cartSlice = createSlice({
   reducers: {
     setCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
+      state.lastSyncedAt = Date.now();
       recalculate(state);
     },
     addToCart: (state, action: PayloadAction<CartItem>) => {
@@ -48,6 +53,8 @@ const cartSlice = createSlice({
       } else {
         existingItem.qty += 1;
       }
+
+      console.log(JSON.parse(JSON.stringify(state.items)));
       recalculate(state);
     },
 
@@ -82,6 +89,7 @@ const cartSlice = createSlice({
       state.items = [];
       state.totalAmount = 0;
       state.totalQuantity = 0;
+      state.lastSyncedAt = null;
     },
   },
 });
@@ -92,6 +100,8 @@ export const {
   decreaseQuantity,
   removeFromCart,
   rollbackCart,
-  clearCart
+  clearCart,
 } = cartSlice.actions;
 export default cartSlice.reducer;
+
+export type { CartItem };
